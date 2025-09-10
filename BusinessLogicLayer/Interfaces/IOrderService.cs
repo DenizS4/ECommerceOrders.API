@@ -4,10 +4,10 @@ namespace BusinessLogicLayer.Interfaces;
 
 public interface IOrderService
 {
-    Task<List<GetOrdersDto>> GetAllOrders();
-    Task<GetOrdersDto> GetOrdersById(int orderId);
-    Task<List<GetOrdersDto>> GetOrdersByCategory(string category);
-    Task<List<GetOrdersDto>> GetOrdersBySearchString(string searchString);
-    Task<GetOrdersDto> CreateOrder(AddOrderDto order);
-    Task<bool> DeleteOrder(int orderId);
+    Task<List<GetOrderDto>> GetAllOrders();
+    Task<GetOrderDto> GetOrdersById(Guid orderId);
+    Task<List<GetOrderDto>> GetOrdersByCategory(string category);
+    Task<List<GetOrderDto>> GetOrdersBySearchString(string searchString);
+    Task<GetOrderDto> CreateOrder(AddOrderDto order);
+    Task<bool> DeleteOrder(Guid orderId);
 }

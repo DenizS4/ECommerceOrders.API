@@ -16,59 +16,93 @@ public class OrderService : IOrderService
         _mapper = mapper;
     }
 
-    public async Task<List<GetOrdersDto>> GetAllOrders()
+    public async Task<List<GetOrderDto>> GetAllOrders()
     {
         var orders = await _orderRepository.GetAllOrders();
-        
-        if(orders == null)
+        if (orders == null || orders.Count == 0)
             throw new ApplicationException("No orders found");
-        var ordersMapped = _mapper.Map<List<GetOrdersDto>>(orders);
-        return ordersMapped;
+
+        var orderItems = await _orderRepository.GetAllOrderItems();
+        
+        var itemsByOrderId = orderItems
+            .GroupBy(i => i.OrderID)
+            .ToDictionary(g => g.Key, g => (IEnumerable<OrderItem>)g.ToList());
+        var result = new List<GetOrderDto>(orders.Count);
+        foreach (var order in orders)
+        {
+            itemsByOrderId.TryGetValue(order.OrderID, out var itemsForThisOrder);
+            var dto = _mapper.Map<GetOrderDto>(
+                order,
+                opt => opt.Items["orderItems"] = itemsForThisOrder ?? Enumerable.Empty<OrderItem>()
+            );
+            result.Add(dto);
+        }
+
+        return result;
     }
 
-    public async Task<GetOrdersDto> GetOrdersById(int orderId)
+    public async Task<GetOrderDto> GetOrdersById(Guid orderId)
     {
         var order = await _orderRepository.GetOrdersById(orderId);
         
         if(order == null)
             throw new ApplicationException("No orders found");
-        var orderMapped = _mapper.Map<GetOrdersDto>(order);
+        var orderItems = await _orderRepository.GetAllOrderItemsByOrderId(orderId);
+        
+        var orderMapped = _mapper.Map<GetOrderDto>(order, opt => opt.Items["orderItems"] = orderItems);
         return orderMapped;
     }
 
-    public async Task<List<GetOrdersDto>> GetOrdersByCategory(string category)
+    public async Task<List<GetOrderDto>> GetOrdersByCategory(string category)
     {
         var orders = await _orderRepository.GetOrdersByCategory(category);
         
         if(orders == null)
             throw new ApplicationException("No orders found");
-        var ordersMapped = _mapper.Map<List<GetOrdersDto>>(orders);
-        return ordersMapped;
+        
+        var orderItems = await _orderRepository.GetAllOrderItemsByCategory(category);
+        
+        var itemsByOrderId = orderItems
+            .GroupBy(i => i.OrderID)
+            .ToDictionary(g => g.Key, g => (IEnumerable<OrderItem>)g.ToList());
+        
+        var result = new List<GetOrderDto>(orders.Count);
+        foreach (var order in orders)
+        {
+            itemsByOrderId.TryGetValue(order.OrderID, out var itemsForThisOrder);
+            var dto = _mapper.Map<GetOrderDto>(
+                order,
+                opt => opt.Items["orderItems"] = itemsForThisOrder ?? Enumerable.Empty<OrderItem>()
+            );
+            result.Add(dto);
+        }
+        return result;
     }
 
 
-    public async Task<List<GetOrdersDto>> GetOrdersBySearchString(string searchString)
+    public async Task<List<GetOrderDto>> GetOrdersBySearchString(string searchString)
     {
         var orders = await _orderRepository.GetOrdersBySearchString(searchString);
         
         if(orders == null)
             throw new ApplicationException("No orders found");
-        var ordersMapped = _mapper.Map<List<GetOrdersDto>>(orders);
+        var ordersMapped = _mapper.Map<List<GetOrderDto>>(orders);
         return ordersMapped;
     }
 
-    public async Task<GetOrdersDto> CreateOrder(AddOrderDto order)
+    public async Task<GetOrderDto> CreateOrder(AddOrderDto order)
     {
         //order.CreateDate = DateTime.Now;
         var orderMapped = _mapper.Map<Order>(order);
-        var orders = await _orderRepository.CreateOrder(orderMapped);
+        var orderItemsMapped = _mapper.Map<List<OrderItem>>(order.Items);
+        var orders = await _orderRepository.CreateOrder(orderMapped, orderItemsMapped);
         
         if(order == null)
             throw new ApplicationException("No order found");
         return orders;
     }
 
-    public async Task<bool> DeleteOrder(int orderId)
+    public async Task<bool> DeleteOrder(Guid orderId)
     {
         var orders = await _orderRepository.DeleteOrder(orderId);
         

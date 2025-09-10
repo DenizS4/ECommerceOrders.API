@@ -6,9 +6,12 @@ namespace BusinessLogicLayer.Interfaces;
 public interface IOrderRepository
 {
     Task<List<Order>> GetAllOrders();
-    Task<Order> GetOrdersById(int orderId);
+    Task<List<OrderItem>> GetAllOrderItems();
+    Task<List<OrderItem>> GetAllOrderItemsByOrderId(Guid orderId);
+    Task<List<OrderItem>> GetAllOrderItemsByCategory(string category);
+    Task<Order> GetOrdersById(Guid orderId);
     Task<List<Order>> GetOrdersByCategory(string category);
     Task<List<Order>> GetOrdersBySearchString(string searchString);
-    Task<GetOrdersDto> CreateOrder(Order order);
-    Task<bool> DeleteOrder(int orderId);
+    Task<GetOrderDto> CreateOrder(Order order, List<OrderItem> orderItem);
+    Task<bool> DeleteOrder(Guid orderId);
 }
